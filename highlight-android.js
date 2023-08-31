@@ -176,19 +176,22 @@ const initializeApp = app => {
     const downloadButton = app.querySelector(".download");
     const statusIndicator = app.querySelector(".status");
     
-    const updateStatus = (message) => {
-        statusIndicator.textContent = message;
-    };
-    
-    downloadButton.disabled = true;
-    
     const appState = {
         files: [],
+        removeStatusTimeout: null,
+    };
+    
+    const updateStatus = (message) => {
+        if(appState.removeStatusTimeout) {
+            clearTimeout(appState.removeStatusTimeout);
+        }
+        statusIndicator.textContent = message;
     };
     
     const updateDefaultStatus = () => {
         let message;
         submitButton.disabled = true;
+        downloadButton.disabled = true;
         const hasScreenshot = screenshotUpload.files.length > 0;
         const hasXml = xmlUpload.files.length > 0;
         const hasFiles = hasScreenshot && hasXml;
@@ -225,6 +228,7 @@ const initializeApp = app => {
     submitButton.addEventListener("click", async function () {
         clearChildren(gallery);
         updateStatus(MESSAGES.IN_PROGRESS);
+        downloadButton.disabled = true;
         
         const xmlImagePairs = groupFileNames(xmlUpload.files, screenshotUpload.files)
             .filter(data => data.files.every(file => !!file))
@@ -247,7 +251,6 @@ const initializeApp = app => {
             
             const highlightsPromise = generateHighlightsImage(xmlFile, imageFile);
             return highlightsPromise.then(highlights => {
-                // data.placeholder.replaceWith(highlights);
                 data.placeholder.textContent = data.name;
                 data.placeholder.appendChild(highlights);
                 data.placeholder.classList.add("complete");
@@ -259,7 +262,7 @@ const initializeApp = app => {
             appState.files = files;
             downloadButton.disabled = false;
             updateStatus(MESSAGES.DONE);
-            setTimeout(() => updateStatus(MESSAGES.NO_MESSAGE), MESSAGE_TIMEOUT);
+            appState.removeStatusTimeout = setTimeout(() => updateStatus(MESSAGES.NO_MESSAGE), MESSAGE_TIMEOUT);
         });
     });
 };
