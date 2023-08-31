@@ -1,7 +1,30 @@
 .screenshot-app canvas {
 }
 
+.gallery {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.gallery > * {
+    margin: 20px;
+    padding: 10px;
+    border-radius: 15px;
+}
+
 .gallery img {
     max-width: 500px;
     max-height: 500px;
+}
+
+.placeholder {
+    width: 150px;
+    height: 150px;
+    background-color: grey;
+    /* center text */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    overflow-wrap: anywhere;
 }

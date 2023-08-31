@@ -144,6 +144,12 @@ const generateHighlightsImage = async (xmlFile, imageFile) => {
     return outputImage;
 };
 
+const clearChildren = parent => {
+    while(parent.firstChild) {
+        parent.removeChild(firstChild);
+    }
+};
+
 window.addEventListener("load", function () {
     
     document.querySelectorAll(".screenshot-app").forEach(app => {
@@ -153,15 +159,33 @@ window.addEventListener("load", function () {
         const gallery = app.querySelector(".gallery");
         
         submitButton.addEventListener("click", async function () {
-            const xmlImagePairs = groupFileNames(xmlUpload.files, screenshotUpload.files);
+            clearChildren(gallery);
             
-            xmlImagePairs.forEach(async data => {
+            const xmlImagePairs = groupFileNames(xmlUpload.files, screenshotUpload.files)
+                .map(data => {
+                    const placeholder = document.createElement("div");
+                    placeholder.classList.add("placeholder");
+                    placeholder.textContent = `Loading ${data.name}…`;
+                    gallery.appendChild(placeholder);
+                    
+                    return Object.assign({ placeholder }, data);
+                });
+            
+            
+            
+            const promises = xmlImagePairs.map(data => {
                 const [ xmlFile, imageFile ] = data.files;
                 
-                const highlights = await generateHighlightsImage(xmlFile, imageFile);
-                gallery.appendChild(highlights);
+                const highlightsPromise = generateHighlightsImage(xmlFile, imageFile);
+                return highlightsPromise.then(highlights => {
+                    data.placeholder.replaceWith(highlights);
+                    return Object.assign({ highlights }, data);
+                });
             });
             
+            Promise.all(promises).then(data => {
+                console.log(data);
+            });
         });
         
         // TODO: remove; convenience
