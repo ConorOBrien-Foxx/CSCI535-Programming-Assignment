@@ -7,6 +7,8 @@ const MESSAGES = {
     PROMPT_XML_AND_SCREENSHOT: "Please upload Screenshot(s) and XML file(s) to view results",
     TITLE_MISMATCH: "Error: Not every provided Screenshot had a corresponding XML, or vice-versa. Please double check the file names and try again.",
     FILE_COUNT_MISMATCH: "Error: Different amounts of Screenshots and XMLs provided. Please ensure all files were uploaded.",
+    DOWNLOADING: "Generating and downloading files…",
+    DOWNLOADED: "Downloaded!",
     Loading(name) {
         return `Loading ${name}…`;
     },
@@ -181,11 +183,18 @@ const initializeApp = app => {
         removeStatusTimeout: null,
     };
     
-    const updateStatus = (message) => {
+    const updateStatus = message => {
         if(appState.removeStatusTimeout) {
             clearTimeout(appState.removeStatusTimeout);
         }
         statusIndicator.textContent = message;
+    };
+    
+    const updateStatusTimeout = (message, timeout = MESSAGE_TIMEOUT) => {
+        updateStatus(message);
+        appState.removeStatusTimeout = setTimeout(() => {
+            updateStatus(MESSAGES.NO_MESSAGE);
+        }, MESSAGE_TIMEOUT);
     };
     
     const updateDefaultStatus = () => {
@@ -221,8 +230,22 @@ const initializeApp = app => {
     screenshotUpload.addEventListener("change", updateDefaultStatus);
     xmlUpload.addEventListener("change", updateDefaultStatus);
     
-    downloadButton.addEventListener("click", function () {
-        console.log(appState);
+    downloadButton.addEventListener("click", async function () {
+        updateStatus(MESSAGES.DOWNLOADING);
+        let zipFile = new JSZip();
+        for(let { highlights, name } of appState.files) {
+            let dataUrl = highlights.src;
+            let base64data = dataUrl.slice(dataUrl.indexOf(","));
+            zipFile.file(`${name}-higlighted.png`, base64data, { base64: true });
+        }
+        
+        const content = await zipFile.generateAsync({ type: "blob" });
+        const blobbified = new Blob([ content ]);
+        const dummyLink = document.createElement("a");
+        dummyLink.href = URL.createObjectURL(blobbified);
+        dummyLink.download = "highlighted.zip";
+        dummyLink.click();
+        updateStatusTimeout(MESSAGES.DOWNLOADED);
     });
     
     submitButton.addEventListener("click", async function () {
@@ -261,14 +284,11 @@ const initializeApp = app => {
         Promise.all(promises).then(files => {
             appState.files = files;
             downloadButton.disabled = false;
-            updateStatus(MESSAGES.DONE);
-            appState.removeStatusTimeout = setTimeout(() => updateStatus(MESSAGES.NO_MESSAGE), MESSAGE_TIMEOUT);
+            updateStatusTimeout(MESSAGES.DONE);
         });
     });
 };
 
 window.addEventListener("load", function () {
-    
     document.querySelectorAll(".screenshot-app").forEach(initializeApp);
-    
 });
