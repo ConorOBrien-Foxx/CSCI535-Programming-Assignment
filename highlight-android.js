@@ -1,3 +1,20 @@
+const MESSAGES = {
+    PROMPT_GENERATE: "Press “Generate Highlights” to view results",
+    IN_PROGRESS: "Generating highlights…",
+    DONE: "Done!",
+    PROMPT_XML: "Please upload corresponding XML file(s) to view results",
+    PROMPT_SCREENSHOT: "Please upload corresponding Screenshot(s) to view results",
+    PROMPT_XML_AND_SCREENSHOT: "Please upload Screenshot(s) and XML file(s) to view results",
+    TITLE_MISMATCH: "Error: Not every provided Screenshot had a corresponding XML, or vice-versa. Please double check the file names and try again.",
+    FILE_COUNT_MISMATCH: "Error: Different amounts of Screenshots and XMLs provided. Please ensure all files were uploaded.",
+    Loading(name) {
+        return `Loading ${name}…`;
+    },
+    NO_MESSAGE: "",
+    // NO_MESSAGE: Symbol("MESSAGES.NO_MESSAGE"),
+};
+const MESSAGE_TIMEOUT = 2 * 1000;
+
 const readTextFileContent = file => new Promise((resolve, reject) => {
     const reader = new FileReader();
 
@@ -59,12 +76,13 @@ const parseBoolean = boolString => {
 };
     
 const drawHighlightBox = (ctx, topLeftX, topLeftY, bottomRightX, bottomRightY) => {
-    ctx.setLineDash([25, 25]);
-    ctx.lineWidth = 5;
-    ctx.strokeStyle = "red";
     let shapeWidth = bottomRightX - topLeftX;
     let shapeHeight = bottomRightY - topLeftY;
     ctx.rect(topLeftX, topLeftY, shapeWidth, shapeHeight);
+    // line style information
+    ctx.setLineDash([25, 25]);
+    ctx.lineWidth = 15;
+    ctx.strokeStyle = "#ffff00";
     ctx.stroke();
     ctx.setLineDash([]);
 };
@@ -146,51 +164,108 @@ const generateHighlightsImage = async (xmlFile, imageFile) => {
 
 const clearChildren = parent => {
     while(parent.firstChild) {
-        parent.removeChild(firstChild);
+        parent.removeChild(parent.firstChild);
     }
+};
+
+const initializeApp = app => {
+    const screenshotUpload = app.querySelector(".screenshot-upload");
+    const xmlUpload = app.querySelector(".xml-upload");
+    const submitButton = app.querySelector(".submit");
+    const gallery = app.querySelector(".gallery");
+    const downloadButton = app.querySelector(".download");
+    const statusIndicator = app.querySelector(".status");
+    
+    const updateStatus = (message) => {
+        statusIndicator.textContent = message;
+    };
+    
+    downloadButton.disabled = true;
+    
+    const appState = {
+        files: [],
+    };
+    
+    const updateDefaultStatus = () => {
+        let message;
+        submitButton.disabled = true;
+        const hasScreenshot = screenshotUpload.files.length > 0;
+        const hasXml = xmlUpload.files.length > 0;
+        const hasFiles = hasScreenshot && hasXml;
+        if(hasFiles) {
+            if(xmlUpload.files.length !== screenshotUpload.files.length) {
+                message = MESSAGES.FILE_COUNT_MISMATCH;
+            }
+            else {
+                message = MESSAGES.PROMPT_GENERATE;
+                submitButton.disabled = false;
+            }
+        }
+        else if(hasScreenshot) {
+            message = MESSAGES.PROMPT_XML;
+        }
+        else if(hasXml) {
+            message = MESSAGES.PROMPT_SCREENSHOT;
+        }
+        else {
+            message = MESSAGES.PROMPT_XML_AND_SCREENSHOT;
+        }
+        updateStatus(message);
+    };
+    
+    updateDefaultStatus();
+    
+    screenshotUpload.addEventListener("change", updateDefaultStatus);
+    xmlUpload.addEventListener("change", updateDefaultStatus);
+    
+    downloadButton.addEventListener("click", function () {
+        console.log(appState);
+    });
+    
+    submitButton.addEventListener("click", async function () {
+        clearChildren(gallery);
+        updateStatus(MESSAGES.IN_PROGRESS);
+        
+        const xmlImagePairs = groupFileNames(xmlUpload.files, screenshotUpload.files)
+            .filter(data => data.files.every(file => !!file))
+            .map(data => {
+                const placeholder = document.createElement("div");
+                placeholder.classList.add("placeholder");
+                placeholder.textContent = MESSAGES.Loading(data.name);
+                gallery.appendChild(placeholder);
+                
+                return Object.assign({ placeholder }, data);
+            });
+        
+        if(xmlImagePairs.length !== xmlUpload.files.length) {
+            updateStatus(MESSAGES.TITLE_MISMATCH);
+            return;
+        }
+        
+        const promises = xmlImagePairs.map(data => {
+            const [ xmlFile, imageFile ] = data.files;
+            
+            const highlightsPromise = generateHighlightsImage(xmlFile, imageFile);
+            return highlightsPromise.then(highlights => {
+                // data.placeholder.replaceWith(highlights);
+                data.placeholder.textContent = data.name;
+                data.placeholder.appendChild(highlights);
+                data.placeholder.classList.add("complete");
+                return Object.assign({ highlights }, data);
+            });
+        });
+        
+        Promise.all(promises).then(files => {
+            appState.files = files;
+            downloadButton.disabled = false;
+            updateStatus(MESSAGES.DONE);
+            setTimeout(() => updateStatus(MESSAGES.NO_MESSAGE), MESSAGE_TIMEOUT);
+        });
+    });
 };
 
 window.addEventListener("load", function () {
     
-    document.querySelectorAll(".screenshot-app").forEach(app => {
-        const screenshotUpload = app.querySelector(".screenshot-upload");
-        const xmlUpload = app.querySelector(".xml-upload");
-        const submitButton = app.querySelector(".submit");
-        const gallery = app.querySelector(".gallery");
-        
-        submitButton.addEventListener("click", async function () {
-            clearChildren(gallery);
-            
-            const xmlImagePairs = groupFileNames(xmlUpload.files, screenshotUpload.files)
-                .map(data => {
-                    const placeholder = document.createElement("div");
-                    placeholder.classList.add("placeholder");
-                    placeholder.textContent = `Loading ${data.name}…`;
-                    gallery.appendChild(placeholder);
-                    
-                    return Object.assign({ placeholder }, data);
-                });
-            
-            
-            
-            const promises = xmlImagePairs.map(data => {
-                const [ xmlFile, imageFile ] = data.files;
-                
-                const highlightsPromise = generateHighlightsImage(xmlFile, imageFile);
-                return highlightsPromise.then(highlights => {
-                    data.placeholder.replaceWith(highlights);
-                    return Object.assign({ highlights }, data);
-                });
-            });
-            
-            Promise.all(promises).then(data => {
-                console.log(data);
-            });
-        });
-        
-        // TODO: remove; convenience
-        submitButton.click();
-    });
-    
+    document.querySelectorAll(".screenshot-app").forEach(initializeApp);
     
 });

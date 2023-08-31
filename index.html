@@ -2,19 +2,35 @@
 <html lang="en">
 <head>
     <title>CSCI 535 - Programming Assignment</title>
+    <script type="text/javascript" src="./lib/jszip.min.js"></script>
     <script src="./highlight-android.js"></script>
     <link rel="STYLESHEET" href="./highlight-android.css"></link>
 </head>
 <body>
-    <div class="screenshot-app">
-        <div>
-            <label>Screenshot: <input type="file" multiple class="screenshot-upload" accept="image/png, image/jpeg"></label>
+    <header>
+    <h1>Android Leaf Highlighter</h1>
+    <p>
+        <em>By Conor O'Brien</em>
+    </p>
+    </header>
+    <article>
+        <div class="screenshot-app">
+            <h2>Usage</h2>
+            <p>
+                Upload 1 or more image files and corresponding xml files using the below dialogues. If uploading more than 1, make sure each pair of images have the same name, ignoring the extension.
+            </p>
+            <div>
+                <label>Screenshot: <input type="file" multiple class="screenshot-upload" accept="image/png, image/jpeg"></label>
+            </div>
+            <div>
+                <label>XML: <input type="file" multiple class="xml-upload" accept="text/xml"></label>
+            </div>
+            <button class="submit">Generate Highlights</button>
+            <button class="download">Download Images</button>
+            <h2>Results</h2>
+            <p class="status"></p>
+            <div class="gallery"></div>
         </div>
-        <div>
-            <label>XML: <input type="file" multiple class="xml-upload" accept="text/xml"></label>
-        </div>
-        <button class="submit">Submit</button>
-        <div class="gallery"></div>
-    </div>
+    </article>
 </body>
 </html>

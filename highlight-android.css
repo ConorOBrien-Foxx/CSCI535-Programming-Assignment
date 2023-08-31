@@ -1,30 +1,104 @@
+@import url('https://fonts.googleapis.com/css2?family=Arvo:wght@400;700&family=Inter:wght@400;700&display=swap');
+
+/* naturally, flex advice from https://css-tricks.com/snippets/css/a-guide-to-flexbox/ */
+
+:root {
+    --primary: #1f2422;
+    --secondary: #3d473e;
+    --secondary-dim: #232924;
+    --highlight: #f0f4fa;
+    --highlight-dim: #babdc2;
+    font-family: "Inter", sans-serif;
+}
+
+html {
+    background-color: var(--primary);
+    color: var(--highlight);
+}
+
 .screenshot-app canvas {
 }
 
 .gallery {
     display: flex;
     flex-wrap: wrap;
+    justify-content: center;
 }
 
 .gallery > * {
-    margin: 20px;
-    padding: 10px;
-    border-radius: 15px;
+    margin: 5px;
+    padding: 5px;
+    border-radius: 8px;
+    border: 3px dotted var(--highlight);
+    background-color: var(--secondary);
+    max-width: 190px;
 }
-
-.gallery img {
-    max-width: 500px;
-    max-height: 500px;
+.gallery > * > img {
+    max-width: 100%;
 }
 
 .placeholder {
-    width: 150px;
-    height: 150px;
-    background-color: grey;
+    /* width: 150px; */
+    min-height: 150px;
+    flex-direction: column;
+    overflow-wrap: anywhere;
     /* center text */
     display: flex;
     align-items: center;
     justify-content: center;
     text-align: center;
-    overflow-wrap: anywhere;
+}
+
+.placeholder.complete {
+    justify-content: space-between;
+    font-family: "Arvo", sans-serif;
+}
+
+h1, h2 {
+    margin: 0;
+    text-align: center;
+    font-family: "Arvo", sans-serif;
+}
+
+p {
+    margin: 5px;
+}
+
+button, input {
+    cursor: pointer;
+    color: var(--highlight);
+    border: 1px solid var(--highlight);
+    background-color: var(--secondary);
+    padding: 7px;
+    margin: 5px;
+    font-size: 1em;
+    border-radius: 4px;
+}
+
+button[disabled] {
+    background-color: var(--secondary-dim);
+    color: var(--highlight-dim);
+    cursor: not-allowed;
+    font-style: italic;
+}
+
+input[type=file] {
+    border-width: 3px;
+    border-style: dashed;
+}
+
+.status {
+    text-align: center;
+    font-style: italic;
+}
+
+body > header {
+    text-align: center;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+body > article {
+    max-width: 700px;
+    margin: 0 auto;
 }
